@@ -3,6 +3,8 @@ package org.parser.json;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.parser.util.Constants.*;
+
 public class JsonTokenizer {
     private final String json;
     private int index = 0;
@@ -31,10 +33,46 @@ public class JsonTokenizer {
                     break;
                 case '"':
                     tokens.add(parseString());
+                default:
+                    if( Character.isDigit(currentChar) || currentChar == '-' ) {
+                        tokens.add( parseNumber() );
+                    } else {
+                        tokens.add( parseLiteral() );
+                    }
+                    break;
             }
         }
 
-        return new ArrayList<>();
+        return tokens;
+    }
+
+    private String parseLiteral() {
+        int start = index;
+        while ( index < json.length() && Character.isLetter( json.charAt( index ) ) ) {
+            index++;
+        }
+        String literal = json.substring(start, index);
+        if (!TRUE.equals( literal ) && !FALSE.equals( literal ) && !NULL.equals( literal ) ) {
+            throw new IllegalArgumentException( "Unexpected token: " + literal );
+        }
+        return literal;
+    }
+
+    private String parseNumber() {
+        int start = index;
+        if( json.charAt( index ) == '-' ) {
+            index++;
+        }
+        while( index < json.length() && Character.isDigit( json.charAt( index ) ) ) {
+            index++;
+        }
+        if( index < json.length() && json.charAt( index ) == '.' ) {
+            index++;
+            while( index < json.length() && Character.isDigit( json.charAt( index ) ) ) {
+                index++;
+            }
+        }
+        return json.substring(start, index);
     }
 
     private String parseString() {
